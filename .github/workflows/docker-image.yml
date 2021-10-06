@@ -14,7 +14,6 @@ jobs:
     - name: Docker Buildx Bake
       # You may pin to the exact commit or the version.
       # uses: docker/bake-action@bf8ce2e8a5af8409a414e56f0125262226cce077
-    -  
       uses: docker/bake-action@v1.6.0
       with:
         # Builder instance
