@@ -11,27 +11,25 @@ RUN \
     linux-headers \
     perl \
     zlib-dev \
+    ccache \
   && \
   mkdir -p /usr/local/src/ && cd /usr/local/src/ && \
-  curl https://www.openssl.org/source/openssl-${VERSION}.tar.gz -o openssl-${VERSION}.tar.gz && \
-  sha256sum openssl-${VERSION}.tar.gz | grep ${SHA256} && \
-  tar -xf openssl-${VERSION}.tar.gz && \
-  cd /usr/local/src/openssl-${VERSION} && \
+  ###curl https://www.openssl.org/source/openssl-${VERSION}.tar.gz -o openssl-${VERSION}.tar.gz && \
+  ###sha256sum openssl-${VERSION}.tar.gz | grep ${SHA256} && \
+  ###tar -xf openssl-${VERSION}.tar.gz && \
+  ###cd /usr/local/src/openssl-${VERSION} && \
+  git clone -n https://github.com/openssl/openssl/ openssl-git && \
+  git checkout a596d38a8cddca4af3416b2664e120028d96e6a9 && \
+  cd /usr/local/src/openssl-git && \
   ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib && \
   make && \
   make TESTS=-test_afalg test && \
   make install && \
-  apk del \
-    alpine-sdk \
-    curl \
-    linux-headers \
-    perl \
-    zlib-dev \
-  && \
+  # apk del alpine-sdk curl linux-headers perl zlib-dev ccache && \
   adduser -D -g '' openssl && \
   echo "/usr/local/ssl/lib:/lib:/usr/local/lib:/usr/lib" > /etc/ld-musl-$(arch).path && \
-  rm /usr/local/src/openssl-${VERSION}.tar.gz && \
-  rm -rf /usr/local/src/openssl-${VERSION} && \
+  ###rm /usr/local/src/openssl-${VERSION}.tar.gz && \
+  ###rm -rf /usr/local/src/openssl-${VERSION} && \
   rm -rf /var/cache/apk/*
 
 USER openssl
