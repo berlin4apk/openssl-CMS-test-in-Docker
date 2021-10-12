@@ -24,11 +24,14 @@ jobs:
           - gcc
         release:
           - false
+        ContinueOnErrorVar:
+          - true
         include:
           - os: ubuntu-latest
             config-args: ''
             release: true
     runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.ContinueOnErrorVar }}
     steps:
       - uses: actions/checkout@v2
         with:
