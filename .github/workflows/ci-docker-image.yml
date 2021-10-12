@@ -24,14 +24,15 @@ jobs:
           - gcc
         release:
           - false
-        ContinueOnErrorVar:
+        # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
+        experimental:
           - true
         include:
           - os: ubuntu-latest
             config-args: ''
             release: true
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.ContinueOnErrorVar }}
+    continue-on-error: ${{ matrix.experimental }}
     steps:
       - uses: actions/checkout@v2
         with:
