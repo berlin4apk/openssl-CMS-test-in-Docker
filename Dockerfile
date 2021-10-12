@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.3
-
 FROM alpine:3.14
 
 ARG VERSION SHA256
