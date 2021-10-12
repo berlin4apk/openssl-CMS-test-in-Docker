@@ -11,9 +11,9 @@ CONTAINER_NAME ?= openssl-cms
 CONTAINER_INSTANCE ?= default
 #BUILDX ?= buildx build --progress plain
 #BUILDX_CREATE ?= "$(docker buildx create --name BUILDKIT_STEP_LOG --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000)"
-BUILDX_CREATE_NAME ?= BUILDKIT_STEP_LOG
-BUILDX_CREATE_NAME_prep:
-	docker buildx create --name $(BUILDX_CREATE_NAME) --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000
+###BUILDX_CREATE_NAME ?= BUILDKIT_STEP_LOG
+BUILDX_CREATE_NAME ?= default
+###BUILDX_CREATE_NAME_prep:	docker buildx create --name $(BUILDX_CREATE_NAME) --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000
 #BUILDX ?= buildx build --progress plain --builder \"$$(docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000)\"
 BUILDX ?= buildx build --progress plain --builder $(BUILDX_CREATE_NAME)
 #BUILDX ?= buildx build --no-cache --progress plain
