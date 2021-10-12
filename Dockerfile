@@ -61,17 +61,17 @@ RUN adduser -D -g '' user
 #RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache ccache -s
 RUN CCACHE_DIR=/tmp/ccache ccache -s
 
-RUN cd /usr/local/src/openssl-git \
-#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#RUN cd /usr/local/src/openssl-git \
+RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
   && ccache -s \
   && ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib \
   && make #\
-RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
-#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
   && make TESTS=-test_afalg test #\
-RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
-#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
-  && make install #\
+#RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+  && make install \
   && ccache -s \
   # && apk del alpine-sdk curl linux-headers perl zlib-dev ccache \
   && adduser -D -g '' openssl \
