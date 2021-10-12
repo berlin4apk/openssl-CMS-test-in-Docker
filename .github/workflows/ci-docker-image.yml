@@ -25,13 +25,13 @@ jobs:
           - gcc
         release:
           - false
-        experimental: true
-        # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
+        experimental: [true]
         include:            
           - os: ubuntu-latest
             config-args: ''
             release: true
     runs-on: ${{ matrix.os }}
+            # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
     continue-on-error: ${{ matrix.experimental }}
     steps:
       - uses: actions/checkout@v2
