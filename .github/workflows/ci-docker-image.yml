@@ -6,6 +6,10 @@ on:
     - cron: 0 7 1 * *
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.experimental }}
+    # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
+    # https://github.com/apache/commons-io/blob/5911ca64d08c110bc7a612dbef2f278d5dd2a9ab/.github/workflows/maven.yml#L23
     strategy:
       fail-fast: false
       matrix:
@@ -30,9 +34,7 @@ jobs:
           - os: ubuntu-latest
             config-args: ''
             release: true
-    runs-on: ${{ matrix.os }}
-            # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
-    continue-on-error: ${{ matrix.experimental }}
+            experimental: true
     steps:
       - uses: actions/checkout@v2
         with:
