@@ -6,7 +6,6 @@ on:
     - cron: 0 7 1 * *
 jobs:
   build:
-    continue-on-error: ${{ matrix.experimental }}
     strategy:
       matrix:
         os:
@@ -28,10 +27,11 @@ jobs:
         # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
         experimental:
           - true
-        include:
+        include:            
           - os: ubuntu-latest
             config-args: ''
             release: true
+    continue-on-error: ${{ matrix.experimental }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
