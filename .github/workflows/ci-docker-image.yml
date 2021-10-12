@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -24,16 +25,15 @@ jobs:
           - gcc
         release:
           - false
-        experimental:
-          - true
+        experimental: true
         # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
         include:            
           - os: ubuntu-latest
             config-args: ''
             release: true
     runs-on: ${{ matrix.os }}
-    steps:
     continue-on-error: ${{ matrix.experimental }}
+    steps:
       - uses: actions/checkout@v2
         with:
           submodules: true
