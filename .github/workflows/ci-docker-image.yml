@@ -28,28 +28,6 @@ jobs:
           - os: ubuntu-latest
             config-args: ''
             release: true
-          - os: ubuntu-latest
-            compiler: clang
-            config-args: "--with-snmp --with-xml"
-          - os: macos-latest
-            compiler: clang
-            config-args: "--with-snmp --with-xml"
-          - os: macos-11
-            compiler: clang
-            config-args: "--with-snmp --with-xml"
-          - os: macOS-10.15
-            compiler: clang
-            config-args: "--with-snmp --with-xml"
-          - os: macOS-10.15
-            compiler: clang
-            config-args: >
-              --prefix=/usr/local
-              --localstatedir=/var
-              --sysconfdir=/private/etc
-              --with-embedded-libevent
-              --without-snmp
-              --without-xml
-            release: true
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
@@ -57,7 +35,7 @@ jobs:
           submodules: true
       - name: hash matrix.platform-args
         run: echo ${{ matrix.platform-args }} > /tmp/matrixplatformargs
-      - name: ccache
+      - name: ccache-${{ github.run_id }}
         uses: hendrikmuhs/ccache-action@v1
         with:
           key: ${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('/tmp/matrixplatformargs') }}
