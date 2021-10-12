@@ -4,8 +4,8 @@ FROM alpine:3.14
 
 ARG VERSION SHA256
 
-#RUN \
-RUN --mount=type=cache,id=apk,target=/var/cache/apk ln -vs /var/cache/apk /etc/apk/cache && \
+RUN \
+#RUN --mount=type=cache,id=apk,target=/var/cache/apk ln -vs /var/cache/apk /etc/apk/cache && \
   apk update && \
   apk upgrade && \
   apk add \
@@ -53,16 +53,19 @@ RUN adduser -D -g '' user
 #ENV CXX "ccache g++"
 #RUN export CC="ccache gcc"; export CXX="ccache g++"; mkdir -p "$HOME/.ccache"; \
 
-RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache ccache -s
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache ccache -s
+RUN CCACHE_DIR=/tmp/ccache ccache -s
 
-###RUN cd /usr/local/src/openssl-git \
-RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+RUN cd /usr/local/src/openssl-git \
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
   && ccache -s \
   && ./config --prefix=/usr/local/ssl --openssldir=/usr/local/ssl shared zlib \
   && make #\
-RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
   && make TESTS=-test_afalg test #\
-RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
   && make install #\
   && ccache -s \
   # && apk del alpine-sdk curl linux-headers perl zlib-dev ccache \
