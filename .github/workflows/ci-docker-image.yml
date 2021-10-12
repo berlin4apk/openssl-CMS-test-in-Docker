@@ -32,8 +32,8 @@ jobs:
             config-args: ''
             release: true
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
     steps:
+    continue-on-error: ${{ matrix.experimental }}
       - uses: actions/checkout@v2
         with:
           submodules: true
