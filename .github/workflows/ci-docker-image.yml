@@ -32,6 +32,23 @@ jobs:
           key: ${{ runner.os }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-buildx-
+      # START workaround for --cache-from fails if cache does not already exist
+      # Temp fix1
+      #    https://github.com/docker/buildx/issues/206
+      - name: Temp fix1, create Dockerfile.dummy
+        run: echo "FROM alpine" > Dockerfile.dummy
+      - uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile.dummy
+          platforms: |
+            linux/amd64
+          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
+      - name: Temp fix1, Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+      # END workaround for --cache-from fails if cache does not already exist
       - uses: docker/metadata-action@v3
         id: meta
         with:
@@ -66,10 +83,10 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
       -
-        # Temp fix
+        # Temp fix2
         # https://github.com/docker/build-push-action/issues/252
         # https://github.com/moby/buildkit/issues/1896
-        name: Move cache
+        name: Temp fix2, Move cache
         run: |
           rm -rf /tmp/.buildx-cache
           mv /tmp/.buildx-cache-new /tmp/.buildx-cache
