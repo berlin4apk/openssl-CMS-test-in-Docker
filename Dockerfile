@@ -1,8 +1,11 @@
 # syntax=docker/dockerfile:1.3-labs
 #ARG TAG=3.14
 #ARG TAG=edge
-ARG TAG=3.14
-FROM alpine:$TAG
+#ARG TAG=3.14
+#FROM alpine:$TAG
+
+ARG BASE_IMAGE=alpine:3.14
+FROM ${BASE_IMAGE}
 
 ARG VERSION SHA256
 
