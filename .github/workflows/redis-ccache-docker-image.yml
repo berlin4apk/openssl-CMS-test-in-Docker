@@ -36,7 +36,6 @@ jobs:
           - /data/my_data
           - /source/directory:/destination/directory
 
-    
     steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
@@ -44,18 +43,18 @@ jobs:
 
       - name: Run test to 127.0.0.1 without ssl
       # connect to the redis-server via TLS
-      - run: |
+        run: |
           redis-cli -h 127.0.0.1 ping
 
       - name: Run test to redis without ssl
       # connect to the redis-server via TLS
-      - run: |
+        run: |
           redis-cli -h redis ping
 
 
       - name: Run tests with ssl
       # connect to the redis-server via TLS
-      - run: |
+        run: |
           redis-cli -h 127.0.0.1 -p "${{ steps.setup.outputs.redis-tls-port }}" \
             --tls \
             --cert "${{ steps.setup.outputs.redis-tls-dir }}/redis.crt" \
@@ -78,4 +77,3 @@ jobs:
           REDIS_HOST: redis
           # The default Redis port
           REDIS_PORT: 6379
-
