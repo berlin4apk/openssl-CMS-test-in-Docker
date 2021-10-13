@@ -14,14 +14,14 @@ jobs:
     # Docker Hub image that `container-job` executes in
     #container: node:10.18-jessie
     #container: _/redis
-    container: _/redis:6.2.4-alpine3.13
+    container: redis:6.2.4-alpine3.13
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
       redis:
         # Docker Hub image
         #image: _/redis
-        image: _/redis:6.2.6-alpine3.14
+        image: redis:6.2.6-alpine3.14
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
