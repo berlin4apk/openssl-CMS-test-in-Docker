@@ -42,14 +42,26 @@ jobs:
       - name: Check out repository code
         uses: actions/checkout@v2
 
-      - name: Run tests
-        run: test
-        env:
-          # The hostname used to communicate with the Redis service container
-          REDIS_HOST: localhost
-          # The default Redis port
-          REDIS_PORT: 6379
+      - name: Run test to 127.0.0.1 without ssl
+      # connect to the redis-server via TLS
+      - run: |
+          redis-cli -h 127.0.0.1 ping
 
+      - name: Run test to redis without ssl
+      # connect to the redis-server via TLS
+      - run: |
+          redis-cli -h redis ping
+
+
+      - name: Run tests with ssl
+      # connect to the redis-server via TLS
+      - run: |
+          redis-cli -h 127.0.0.1 -p "${{ steps.setup.outputs.redis-tls-port }}" \
+            --tls \
+            --cert "${{ steps.setup.outputs.redis-tls-dir }}/redis.crt" \
+            --key "${{ steps.setup.outputs.redis-tls-dir }}/redis.key" \
+            --cacert "${{ steps.setup.outputs.redis-tls-dir }}/ca.crt" \
+            ping
 
       # Performs a clean installation of all dependencies in the `package.json` file
       # For more information, see https://docs.npmjs.com/cli/ci.html
