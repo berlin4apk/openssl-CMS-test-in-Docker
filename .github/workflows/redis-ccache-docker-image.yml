@@ -37,6 +37,15 @@ jobs:
 
 
     steps:
+      - name: Run tests
+        run: test
+        env:
+          # The hostname used to communicate with the Redis service container
+          REDIS_HOST: localhost
+          # The default Redis port
+          REDIS_PORT: 6379
+          
+    steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
         uses: actions/checkout@v2
