@@ -1,0 +1,243 @@
+# syntax=docker/dockerfile:1.3-labs
+#ARG TAG=3.14
+#ARG TAG=edge
+#ARG TAG=3.14
+#FROM alpine:$TAG
+
+ARG BASE_IMAGE=alpine:3.14
+FROM ${BASE_IMAGE}
+
+ARG VERSION SHA256
+
+ENV control4cp="/control4cp" filelist_before_install4cp="/filelist_before_install4cp" filelist_after_install4cp="/filelist_after_install4cp" env4cp="/env4cp" set4cp="/set4cp" env_after_install4cp="/env_after_install4cp" set_after_install4cp="/set_after_install4cp"
+#RUN \
+#touch /control4cp && chmod 600 /*4cp
+#echo control4cp=/control4cp >> /control4cp
+#echo filelist_after_install4cp=/filelist_after_install4cp >> $control4cp
+#echo env2cp=/env2cp >> $control4cp
+#echo set2cp=/set2cp >> $control4cp
+#chmod 600 /*4cp
+RUN env > ${env4cp} && set > ${set4cp} && chmod 600 /*4cp && time find / -xdev -exec busybox realpath '{}' \; > ${filelist_before_install4cp}
+
+#RUN --mount=type=cache,id=apk,target=/var/cache/apk ln -vs /var/cache/apk /etc/apk/cache && \
+RUN \
+  apk update && \
+  apk upgrade && \
+  apk add \
+    alpine-sdk \
+    curl \
+    linux-headers \
+    perl \
+    sudo bash xz zstd cmake asciidoc asciidoctor perl \
+    #zlib-dev \
+    #zstd-dev zstd ccache ccache-doc sudo \
+  && rm -rf /var/cache/apk/*
+
+#RUN --mount=type=cache,id=apk,target=/var/cache/apk ln -vs /var/cache/apk /etc/apk/cache && \
+RUN \
+  apk update && \
+  apk upgrade && \
+  apk add \
+    py3-pip \
+  && rm -rf /var/cache/apk/* \
+  # samurai ist eine alte version
+  # https://packaging.python.org/tutorials/installing-packages/
+  #&& python3 -m pip --no-cache-dir install "ninja==1.10.2.2"
+#  && python3 -m pip install --upgrade -v pip \
+  && python3 -m pip install --upgrade pip \
+  && python3 -m pip install "ninja==1.10.2.2"
+
+
+ARG progVER=4.4.2
+ARG progNAME=ccache
+ARG progDIR=ccache-git
+# https://blog.kitware.com/cmake-building-with-all-your-cores/
+# ninja does not require a –j flag like GNU make to perform a parallel build. It defaults to building cores +2 jobs at once (thanks to Matthew Woehlke for pointing out that it is not simply 10 as I had originally stated.).  It does however accept a –j flag with the same syntax as GNU make, -j N where N is the number of jobs run in parallel. For more information run ninja –help with the ninja you have built.
+# ninja --help ...
+#   -j N     run N jobs in parallel (0 means infinity) [default=6 on this system]
+#  -k N     keep going until N jobs fail (0 means infinity) [default=1]
+#  -l N     do not start new jobs if the load average is greater than N
+#  -n       dry run (don't run commands but act like they succeeded)
+# https://cmake.org/cmake/help/latest/envvar/CMAKE_BUILD_PARALLEL_LEVEL.html
+# cmake --help ...
+# `--parallel [<jobs>], -j [<jobs>]``
+#   The maximum number of concurrent processes to use when building.
+#   If ``<jobs>`` is omitted the native build tool's default number is used.
+# 
+#   The ``CMAKE_BUILD_PARALLEL_LEVEL`` environment variable, if set,
+#   specifies a default parallel level when this option is not given.
+# 
+#   Some native build tools always build in parallel.  The use of ``<jobs>``
+#   value of ``1`` can be used to limit to a single job.
+
+#ARG cmakeARG="--parallel 3" #
+# not working # ARG cmakeARG="-j 3" #
+ARG CMAKE_BUILD_PARALLEL_LEVEL=3 # New in version 3.12. This is a CMake Environment Variable. Its initial value is taken from the calling process environment. Specifies the maximum number of concurrent processes to use when building using the cmake --build command line Build Tool Mode. If this variable is defined empty the native build tools default number is used.
+# ARG CTEST_PARALLEL_LEVEL=4 # CTEST_PARALLEL_LEVEL This is a CMake Environment Variable. Its initial value is taken from the calling process environment. Specify the number of tests for CTest to run in parallel. See ctest(1) for more information on parallel test execution.
+ARG ninjaARG="-l2" #  
+
+# FIXME #RUN cd /usr/local/bin && ln -s /usr/lib/ccache/bin/* . && mkdir -p "/ccache" && mkdir -p "/dev/shm/ccache/"  && mkdir -p "/tmp/ccache/" ;
+
+#RUN cat <<EOF > /etc/ccache.conf
+COPY <<EOF /etc/ccache.conf-PROD
+#cache_dir=/ccache/
+#cache_dir=/dev/shm/ccache/
+cache_dir=/tmp/ccache/${cmakeARG}
+compression=false
+#compression_level
+#file_clone=true
+hard_link=false
+umask=002
+secondary_storage="http://172.17.0.1:8080|layout=bazel"
+max_size=500M
+# reshare (CCACHE_RESHARE or CCACHE_NORESHARE, see Boolean values above)
+# If true, ccache will write results to secondary storage even for primary storage cache hits. The default is false.
+reshare=true
+EOF
+#COPY /etc/ccache.conf /etc/ccache.conf-PROD
+COPY <<EOF /etc/ccache.conf-TEST
+# /etc/ccache.conf for testing after compiling
+EOF
+RUN ln -s /etc/ccache.conf-TEST /etc/ccache.conf
+
+RUN set -vx && mkdir -p /usr/local/src/ && cd /usr/local/src/ \
+  && curl -LORJ https://github.com/ccache/ccache/releases/download/v${progVER}/ccache-${progVER}.tar.xz \
+  && curl -LORJ https://github.com/ccache/ccache/releases/download/v${progVER}/ccache-${progVER}.tar.xz.asc \
+  # && FIXME gpgv --verify ccache-${progVER}.tar.xz.asc ccache-${progVER}.tar.xz \
+  && ls -latr \
+  && tar xvJf ccache-${progVER}.tar.xz \
+  && mv ccache-${progVER} ${progDIR} ###||:
+  ##RUN cd /usr/local/src/ && cd openssl-git && ls -latr /usr/local/src/ && git apply --check /usr/local/src/*.patch && git apply /usr/local/src/*.patch
+  ###curl https://www.openssl.org/source/openssl-${VERSION}.tar.gz -o openssl-${VERSION}.tar.gz && \
+  ###sha256sum openssl-${VERSION}.tar.gz | grep ${SHA256} && \
+  ###tar -xf openssl-${VERSION}.tar.gz && \
+  ###cd /usr/local/src/openssl-${VERSION} && \
+  ##git clone -n https://github.com/openssl/openssl.git openssl-git 
+  #&& \
+  ##RUN cd /usr/local/src/ && cd openssl-git && git checkout c3b5fa4ab7d19e35311a21fec3ebc0a333c352b6
+  ##ADD https://patch-diff.githubusercontent.com/raw/openssl/openssl/pull/15348.patch /usr/local/src/openssl-CMS-sign-digest-PR15348.patch
+  ##RUN cd /usr/local/src/ && cd openssl-git && ls -latr /usr/local/src/ && git apply --check /usr/local/src/*.patch && git apply /usr/local/src/*.patch
+RUN adduser -D -g '' user
+#ENV CC "ccache gcc"
+#ENV CXX "ccache g++"
+#RUN export CC="ccache gcc"; export CXX="ccache g++"; mkdir -p "$HOME/.ccache"; \
+
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache ccache -s
+RUN CCACHE_DIR=/tmp/ccache ccache -s ||:
+
+# https://wiki.gentoo.org/wiki/GCC_optimization#Optimizing
+# https://wiki.gentoo.org/wiki/Safe_CFLAGS
+#Linux GCC 32-bit
+#CFLAGS: -m32 -g -O2
+#CXXFLAGS: -m32 -g -O2
+#LDFLAGS: -m32
+# ARG CFLAGSvar "-m32 -O2 -static"
+# ENV CFLAGSvar ${CFLAGSvar}
+# ARG CXXFLAGSvar "-m32 -O2 -static"
+# ENV CXXFLAGSvar ${CXXFLAGSvar}
+# ARG LDFLAGSvar "-m32 -static -static-libgcc -static-libstdc++"
+# ENV LDFLAGSvar ${LDFLAGSvar}
+
+ARG CFLAGSvar="-O2 -static -pipe"
+ENV CFLAGS="${CFLAGSvar} ${CFLAGS}"
+ARG CXXFLAGSvar="-O2 -static -pipe"
+ENV CXXFLAGS="${CXXFLAGSvar} ${CXXFLAGS}"
+ARG LDFLAGSvar="-static -static-libgcc -static-libstdc++"
+ENV LDFLAGS="${LDFLAGSvar} ${LDFLAGS}"
+
+ARG CMAKE_INSTALL_DO_STRIP=1
+ENV CMAKE_INSTALL_DO_STRIP=${CMAKE_INSTALL_DO_STRIP}
+ARG CPACK_STRIP_FILES="ccache;./ccache;build_package_dir_test/ccache;bin/ccache"
+ENV CPACK_STRIP_FILES=${CPACK_STRIP_FILES}
+#ARG DZSTD_FROM_INTERNET=ON
+#ENV DZSTD_FROM_INTERNET=${DZSTD_FROM_INTERNET}
+#ARG DHIREDIS_FROM_INTERNET=ON
+#ENV DHIREDIS_FROM_INTERNET=${HIREDIS_FROM_INTERNET}
+#ARG CMAKE_BUILD_TYPE=None
+#ARG CMAKE_BUILD_TYPE
+#ENV CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}
+#ARG CMAKE_INSTALL_PREFIX=/usr
+ARG CMAKE_INSTALL_PREFIX
+ENV CMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+# CMAKE_GENERATOR=Ninja wichtig fuer den ninja -v package aufruf
+ARG CMAKE_GENERATOR=Ninja
+ENV CMAKE_GENERATOR=${CMAKE_GENERATOR}
+
+#export CMAKE_GENERATOR=Ninja
+
+# docker cp dummy-for-cp:/usr/local/src/ccache-git/build_package_dir_test/ccache-4.4.2-Linux-x86_64.tar.xz .
+
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-O2 -static -pipe ${CXXFLAGS}" CFLAGS="-O2 -static -pipe ${CFLAGS}"
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-O3 -static -pipe ${CXXFLAGS}" CFLAGS="-O3 -static -pipe ${CFLAGS}"
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-Os -static -pipe ${CXXFLAGS}" CFLAGS="-Os -static -pipe ${CFLAGS}" 
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-m32 -O2 -static -pipe ${CXXFLAGS}" CFLAGS="-m32 -O2 -static -pipe ${CFLAGS}" 
+
+# mkdir build_package_dir_test && cd build_package_dir_test
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-O2 -static -pipe ${CXXFLAGS}" CFLAGS="-O2 -static -pipe ${CFLAGS}" CMAKE_INSTALL_DO_STRIP=1 CPACK_STRIP_FILES="ccache;./ccache;build_package_dir_test/ccache;bin/ccache" cmake .. ${cmakeARG} -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-O2 -static -pipe ${CXXFLAGS}" CFLAGS="-O2 -static -pipe ${CFLAGS}" CMAKE_INSTALL_DO_STRIP=1 CPACK_STRIP_FILES="ccache;./ccache;build_package_dir_test/ccache;bin/ccache" ninja ${ninjaARG} -v package
+# strip --preserve-dates --verbose ccache
+# LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-O2 -static -pipe ${CXXFLAGS}" CFLAGS="-O2 -static -pipe ${CFLAGS}" CMAKE_INSTALL_DO_STRIP=1 CPACK_STRIP_FILES="ccache;./ccache;build_package_dir_test/ccache;bin/ccache" ninja ${ninjaARG} -v package
+
+# export CMAKE_GENERATOR=Ninja oder ARG CMAKE_GENERATOR=Ninja ; ENV CMAKE_GENERATOR=${CMAKE_GENERATOR} # ist wichtig fuer den ninja -v package aufruf
+RUN cd /usr/local/src/${progDIR} && mkdir build_package_dir_test && cd build_package_dir_test
+RUN cd /usr/local/src/${progDIR}/build_package_dir_test && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON -DCMAKE_BUILD_TYPE=Release .. 
+RUN cd /usr/local/src/${progDIR}/build_package_dir_test && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && strip --preserve-dates --verbose ccache && ls -lath ccache ccache-*.tar.* && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && cp -p ccache ccache-*.tar.* /opt/ && ls ccache-*.tar.*
+
+#FIXME logfile hack
+#RUN logfilehackvar=$(grep -R CPACK_PACKAGE_FILE_NAME */CPackConfig.cmake | cut -d \" -f2) #"
+#RUN logfilehackvar=$(grep -R CPACK_PACKAGE_FILE_NAME */CPackConfig.cmake | cut -d " " -f2 | cut -d ")" -f1)
+RUN export logfilehack=$( grep -R CPACK_PACKAGE_FILE_NAME /usr/local/src/*/*/CPackConfig.cmake | awk '{print $2}' | tr -d '(")' )
+ENV logfilehack=${logfilehack}
+# Get out of git directory just to be sure.
+RUN cd /usr/local/src/${progDIR}/build_package_dir_test && tmp_dir=$(mktemp -d) && trap "rm -rf $tmp_dir" EXIT && tar -xf ccache-*.tar.xz -C $tmp_dir && CCACHE=$(echo $tmp_dir/ccache-*/bin/ccache) ../test/run | tee -a /opt/${logfilehack}-log.txt
+#FIXME logfile hack
+
+#RUN cd /usr/local/src/${progDIR} \
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/${progDIR} \
+
+###RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=  cd /usr/local/src/${progDIR} \
+###  && export LDFLAGS="${LDFLAGSvar} ${LDFLAGS}" ; export CXXFLAGS="${CXXFLAGSvar} ${CXXFLAGS}" ; export CFLAGS="${CFLAGSvar} ${CFLAGS}" ; \
+##RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=  cd /usr/local/src/${progDIR} \
+#  && cmake -B build ${cmakeARG} -DCMAKE_BUILD_TYPE=None -DCMAKE_INSTALL_PREFIX=/usr -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON -DSTATIC=ON
+##  && cmake -B build ${cmakeARG} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON -DCMAKE_INSTALL_DO_STRIP=1
+##RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=  cd /usr/local/src/${progDIR} \  
+##  && cmake --build build ${cmakeARG}
+##RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=  cd /usr/local/src/${progDIR} \  
+##  && make -C build test
+  
+##  && mkdir build && cd build \  
+#  && cmake .. ${cmakeARG} -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON  \
+#  && make \
+#  && make install
+RUN ccache -s ||:
+
+#RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#  && make TESTS=-test_afalg test #\
+#RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
+#  && make install \
+#  && ccache -s \
+  # && apk del alpine-sdk curl linux-headers perl zlib-dev ccache \
+#  && adduser -D -g '' openssl \
+#  && echo "/usr/local/ssl/lib:/lib:/usr/local/lib:/usr/lib" > /etc/ld-musl-$(arch).path #\
+  ### && rm /usr/local/src/openssl-${VERSION}.tar.gz \
+  ### && rm -rf /usr/local/src/openssl-${VERSION}
+
+
+#RUN
+
+RUN env > ${env_after_install4cp} && set > ${set_after_install4cp} && chmod 600 /*4cp && time find / -xdev -exec busybox realpath '{}' \; > ${filelist_after_install4cp}
+
+###USER openssl
+#USER user
+
+WORKDIR /
+
+ENV \
+  PATH=/usr/local/ssl/bin:$PATH \
+  SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+  SSL_CERT_DIR=/etc/ssl/certs
+
+###ENTRYPOINT [ "openssl" ]
+
