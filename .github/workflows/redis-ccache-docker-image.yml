@@ -54,12 +54,12 @@ jobs:
     steps:
       - name: "Set some redis settings"
         run: |
-          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'cat /etc/redis/redis.conf'
-          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'mkdir -p /etc/redis
-          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "save 60 100" >> /etc/redis/redis.conf'
-          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "loglevel verbose" >> /etc/redis/redis.conf'
-          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "# see https://github.community/t/how-do-i-properly-override-a-service-entrypoint/17435/8" >> /etc/redis/redis.conf'
-          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "# https://hub.docker.com/_/redis" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -x -c 'cat /etc/redis/redis.conf ||: '
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -x -c 'mkdir -p /etc/redis ||: '
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -x -c 'echo "save 60 100" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -x -c 'echo "loglevel verbose" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -x -c 'echo "# see https://github.community/t/how-do-i-properly-override-a-service-entrypoint/17435/8" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -x -c 'echo "# https://hub.docker.com/_/redis" >> /etc/redis/redis.conf'
           docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }}
 
     ###steps:
