@@ -95,6 +95,7 @@ jobs:
           # apt-get install redis-server
           sudo apt-get install redis-tools
 
+      container: redis:6.2.4
       - name: 1 Run test to redis without ssl
         run: |
           set -vx
