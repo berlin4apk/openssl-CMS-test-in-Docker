@@ -53,9 +53,7 @@ jobs:
           - 6379:6379
 
     steps:
-      - uses: actions/setup-node@v1
-        with:
-          node-version: '*'
+      - uses: docker-practice/actions-setup-docker@1.0.8
       - name: "Set some redis settings"
         run: |
           export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
