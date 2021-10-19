@@ -53,6 +53,9 @@ jobs:
           - 6379:6379
 
     steps:
+      - uses: actions/setup-node@v1
+      with:
+        node-version: '*'
       - name: "Set some redis settings"
         run: |
           export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
