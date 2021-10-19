@@ -26,12 +26,13 @@ jobs:
         image: redis:6.2.6
         # Set health checks to wait until redis has started
         options: >-
+          --entrypoint 'redis-server --save 60 1 --loglevel debug'
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
         # https://hub.docker.com/_/redis
-        args: --save 60 1 --loglevel verbose
+#        args: --save 60 1 --loglevel verbose
 #        with:
 #          args: --save 60 1 --loglevel verbose
           # --loglevel # argument must be one of the following: debug, verbose, notice, warning
@@ -52,6 +53,17 @@ jobs:
           - 6379:6379
 
     steps:
+      - name: "Set some redis settings"
+        run: |
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'cat /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'mkdir -p /etc/redis
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "save 60 100" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "loglevel verbose" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "# see https://github.community/t/how-do-i-properly-override-a-service-entrypoint/17435/8" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} sh -c 'echo "# https://hub.docker.com/_/redis" >> /etc/redis/redis.conf'
+          docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }}
+
+    ###steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
         uses: actions/checkout@v2
