@@ -31,8 +31,9 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         # https://hub.docker.com/_/redis
-        with:
-          args: --save 60 1 --loglevel verbose
+        args: --save 60 1 --loglevel verbose
+#        with:
+#          args: --save 60 1 --loglevel verbose
           # --loglevel # argument must be one of the following: debug, verbose, notice, warning
 #          args: --save 60 1 --loglevel warning
 #          https://redis.io/topics/persistence
