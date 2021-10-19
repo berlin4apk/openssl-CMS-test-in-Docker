@@ -56,21 +56,22 @@ jobs:
 #      - uses: docker-practice/actions-setup-docker@1.0.8
       - name: "Set some redis settings"
         run: |
+          #apt-get install redis-server
+          apt-get install redis-tools
           export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
           uname -a
           cat /etc/*-release
           /usr/bin/lsb_release -a ||:
           /usr/bin/docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }} ||:
-          docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }} ||:
           command -v docker ||:
           command -v -p -V docker ||:
-#          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -c 'echo "cat /etc/redis/redis.conf ||:" '
-#          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'mkdir -p /etc/redis ||: '
-#          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "save 60 100" >> /etc/redis/redis.conf'
-#          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "loglevel verbose" >> /etc/redis/redis.conf'
-#          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "# see https://github.community/t/how-do-i-properly-override-a-service-entrypoint/17435/8" >> /etc/redis/redis.conf'
-#          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "# https://hub.docker.com/_/redis" >> /etc/redis/redis.conf'
-
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -c 'echo "cat /etc/redis/redis.conf ||:" '
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'mkdir -p /etc/redis ||: '
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "save 60 100" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "loglevel verbose" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "# see https://github.community/t/how-do-i-properly-override-a-service-entrypoint/17435/8" >> /etc/redis/redis.conf'
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "# https://hub.docker.com/_/redis" >> /etc/redis/redis.conf'
+          docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }} ||:
     ###steps:
       # Downloads a copy of the code in your repository before running CI tests
       - name: Check out repository code
@@ -91,6 +92,11 @@ jobs:
 #                     If this argument is used, '-a' and REDISCLI_AUTH
 #                     environment variable will be ignored.
 #  -u <uri>           Server URI.
+      - name: "install redis-tools to the local node"
+        run: |
+          # apt-get install redis-server
+          apt-get install redis-tools
+
       - name: 1 Run test to redis without ssl
         run: |
           set -vx
