@@ -93,7 +93,7 @@ jobs:
       - name: "install redis-tools to the local node"
         run: |
           # apt-get install redis-server
-          apt-get install redis-tools
+          sudo apt-get install redis-tools
 
       - name: 1 Run test to redis without ssl
         run: |
