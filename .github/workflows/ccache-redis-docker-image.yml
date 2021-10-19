@@ -75,7 +75,7 @@ jobs:
 
 
   build:
-    needs: redis
+    needs: container-job
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ matrix.experimental }}
     # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
