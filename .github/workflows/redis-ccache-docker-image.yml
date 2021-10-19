@@ -54,7 +54,7 @@ jobs:
     steps:
       - name: "Set some redis settings"
         run: |
-          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'cat /etc/redis/redis.conf ||: '
+          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "cat /etc/redis/redis.conf ||:" '
           docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }}
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'mkdir -p /etc/redis ||: '
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "save 60 100" >> /etc/redis/redis.conf'
