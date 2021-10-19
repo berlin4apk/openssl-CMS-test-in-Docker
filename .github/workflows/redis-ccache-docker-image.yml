@@ -26,7 +26,6 @@ jobs:
         image: redis:6.2.6
         # Set health checks to wait until redis has started
         options: >-
-          --entrypoint "/usr/local/bin/redis-server --save 60 1 --loglevel debug"
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
