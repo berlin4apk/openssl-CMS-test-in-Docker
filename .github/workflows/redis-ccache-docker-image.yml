@@ -14,14 +14,16 @@ jobs:
     # Docker Hub image that `container-job` executes in
     #container: node:10.18-jessie
     #container: _/redis
-    container: redis:6.2.4-alpine3.13
+    #container: redis:6.2.4-alpine3.13
+    container: redis:6.2.4
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
-      redis:
+      redis-y9g98g58d:
         # Docker Hub image
         #image: _/redis
-        image: redis:6.2.6-alpine3.14
+        #image: redis:6.2.6-alpine3.14
+        image: redis:6.2.6
         # Set health checks to wait until redis has started
         options: >-
           --health-cmd "redis-cli ping"
@@ -29,17 +31,21 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         # https://hub.docker.com/_/redis
-#        with:
+        with:
+          args: --save 60 1 --loglevel verbose
+          # --loglevel # argument must be one of the following: debug, verbose, notice, warning
 #          args: --save 60 1 --loglevel warning
+#          https://redis.io/topics/persistence
         # https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions
         # https://cdmana.com/2021/01/20210119024925732p.html
         # https://docs.github.com/en/actions/using-containerized-services/about-service-containers
         # https://docs.github.com/en/actions/using-containerized-services/creating-postgresql-service-containers
         # https://docs.github.com/en/actions/using-containerized-services/creating-redis-service-containers
         volumes:
-          - my_docker_volume:/volume_mount
-          - /data/my_data
-          - /source/directory:/destination/directory
+          - /tmp/docker_volume_mount:/data:rw
+#          - /tmp/docker_volume_mount_my_data:/data/my_data
+#          - my_docker_volume:/volume_mount
+#          - /source/directory:/destination/directory
         ports:
           # Maps port 6379 on service container to the host
           - 6379:6379
@@ -64,38 +70,57 @@ jobs:
 #                     If this argument is used, '-a' and REDISCLI_AUTH
 #                     environment variable will be ignored.
 #  -u <uri>           Server URI.
-      - name: Run test to 127.0.0.1 without ssl
-      # connect to the redis-server via TLS
+      - name: 1 Run test to redis without ssl
         run: |
-          redis-cli --verbose -h 127.0.0.1 -p 6379 ping
+          set -vx
+          sleep 5 && redis-cli -r 5 -i 1 --verbose -h redis-y9g98g58d -p 6379 ping
+          redis-benchmark -h redis-y9g98g58d -p 6379
+      # connect to the redis-server via TLS
 
-      - name: Run test to redis without ssl
-      # connect to the redis-server via TLS
-        run: |
-          redis-cli -h redis ping
+#        run: |
+#          #/usr/local/bin/redis-server &
+#          redis-cli --verbose -h 127.0.0.1 -p 6379 -r 60 -i 2 ping
 
-      - name: Run tests with ssl
+      - name: 2 Run test to redis without ssl
       # connect to the redis-server via TLS
         run: |
-          redis-cli -h 127.0.0.1 -p "${{ steps.setup.outputs.redis-tls-port }}" \
-            --tls \
-            --cert "${{ steps.setup.outputs.redis-tls-dir }}/redis.crt" \
-            --key "${{ steps.setup.outputs.redis-tls-dir }}/redis.key" \
-            --cacert "${{ steps.setup.outputs.redis-tls-dir }}/ca.crt" \
-            ping
+          set -vx
+          sleep 1 && redis-cli -r 6 -i 1 --verbose -h redis -p 6379 ping || redis-cli -r 6 -i 1 --verbose -h redis-y9g98g58d -p 6379 ping
+#          redis-cli -h redis ping
+
+      - name: 3 Run test to redis without ssl
+      # connect to the redis-server via TLS
+        run: |
+          set -vx
+          sleep 1 && redis-cli -r 6 -i 1 --verbose -h 127.0.0.1 -p 6379 ping || redis-cli -r 6 -i 1 --verbose -h localhost -p 6379 ping
+
+
+
+
+ #     - name: Run tests with ssl
+ #     # connect to the redis-server via TLS
+ #       run: |
+ #         redis-cli -h 127.0.0.1 -p "${{ steps.setup.outputs.redis-tls-port }}" \
+ #           --tls \
+ #           --cert "${{ steps.setup.outputs.redis-tls-dir }}/redis.crt" \
+ #           --key "${{ steps.setup.outputs.redis-tls-dir }}/redis.key" \
+ #           --cacert "${{ steps.setup.outputs.redis-tls-dir }}/ca.crt" \
+ #           ping
 
       # Performs a clean installation of all dependencies in the `package.json` file
       # For more information, see https://docs.npmjs.com/cli/ci.html
       ####- name: Install dependencies
       ####  run: npm ci
 
-      - name: Connect to Redis
-        # Runs a script that creates a Redis client, populates
-        # the client with data, and retrieves data
-        run: node client.js
-        # Environment variable used by the `client.js` script to create a new Redis client.
-        env:
-          # The hostname used to communicate with the Redis service container
-          REDIS_HOST: redis
-          # The default Redis port
-          REDIS_PORT: 6379
+#      - name: Connect to Redis
+#        # Runs a script that creates a Redis client, populates
+#        # the client with data, and retrieves data
+#        run: node client.js
+#        # Environment variable used by the `client.js` script to create a new Redis client.
+#        env:
+#          # The hostname used to communicate with the Redis service container
+#          REDIS_HOST: redis
+#          # The default Redis port
+#          REDIS_PORT: 6379
+#
+

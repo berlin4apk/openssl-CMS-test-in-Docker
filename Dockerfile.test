@@ -47,7 +47,6 @@ RUN \
   && python3 -m pip install --upgrade pip \
   && python3 -m pip install "ninja==1.10.2.2"
 
-
 ARG progVER=4.4.2
 ARG progNAME=ccache
 ARG progDIR=ccache-git
@@ -71,10 +70,12 @@ ARG progDIR=ccache-git
 #   value of ``1`` can be used to limit to a single job.
 
 #ARG cmakeARG="--parallel 3" #
-# not working # ARG cmakeARG="-j 3" #
-ARG CMAKE_BUILD_PARALLEL_LEVEL=3 # New in version 3.12. This is a CMake Environment Variable. Its initial value is taken from the calling process environment. Specifies the maximum number of concurrent processes to use when building using the cmake --build command line Build Tool Mode. If this variable is defined empty the native build tools default number is used.
+# not working # ARG cmakeARG="-j 3" # 
+ARG CMAKE_BUILD_PARALLEL_LEVEL=""  # for full cpu on github
+# ARG CMAKE_BUILD_PARALLEL_LEVEL=3 # New in version 3.12. This is a CMake Environment Variable. Its initial value is taken from the calling process environment. Specifies the maximum number of concurrent processes to use when building using the cmake --build command line Build Tool Mode. If this variable is defined empty the native build tools default number is used.
 # ARG CTEST_PARALLEL_LEVEL=4 # CTEST_PARALLEL_LEVEL This is a CMake Environment Variable. Its initial value is taken from the calling process environment. Specify the number of tests for CTest to run in parallel. See ctest(1) for more information on parallel test execution.
-ARG ninjaARG="-l2" #  
+#ARG ninjaARG="-l2" #
+ARG ninjaARG="" #  for full cpu on github  
 
 # FIXME #RUN cd /usr/local/bin && ln -s /usr/lib/ccache/bin/* . && mkdir -p "/ccache" && mkdir -p "/dev/shm/ccache/"  && mkdir -p "/tmp/ccache/" ;
 
@@ -181,11 +182,23 @@ ENV CMAKE_GENERATOR=${CMAKE_GENERATOR}
 # export CMAKE_GENERATOR=Ninja oder ARG CMAKE_GENERATOR=Ninja ; ENV CMAKE_GENERATOR=${CMAKE_GENERATOR} # ist wichtig fuer den ninja -v package aufruf
 RUN cd /usr/local/src/${progDIR} && mkdir build_package_dir_test && cd build_package_dir_test
 RUN cd /usr/local/src/${progDIR}/build_package_dir_test && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON -DCMAKE_BUILD_TYPE=Release .. 
-RUN cd /usr/local/src/${progDIR}/build_package_dir_test && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && strip --preserve-dates --verbose ccache && ls -lath ccache ccache-*.tar.* && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && cp -p ccache ccache-*.tar.* /opt/ && ls ccache-*.tar.*
+RUN cd /usr/local/src/${progDIR}/build_package_dir_test && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && strip --preserve-dates --verbose ccache && ls -lath ccache ccache-*.tar.* && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && cp -p ccache ccache-*.tar.* /opt/ && ls ccache-*.tar.* 
+### normal install via cd /usr/local/src/ccache-git/build_package_dir_test && ninja ${ninjaARG} install/strip
 
 #FIXME logfile hack
 #RUN logfilehackvar=$(grep -R CPACK_PACKAGE_FILE_NAME */CPackConfig.cmake | cut -d \" -f2) #"
 #RUN logfilehackvar=$(grep -R CPACK_PACKAGE_FILE_NAME */CPackConfig.cmake | cut -d " " -f2 | cut -d ")" -f1)
+
+RUN cd /usr/local/src/ && git clone https://github.com/kilobyte/arch-test.git arch-test-git && cd arch-test-git && cp -p elf-arch /usr/local/bin/ && mkdir -p /usr/local/share/man/man1/ &&  cp -p elf-arch.1 /usr/local/share/man/man1/ && apk update && apk add coreutils psutils pciutils patchutils moreutils binutils dateutils diffutils util-linux findutils elfutils && rm -rf /var/cache/apk/*
+RUN ls -latr /opt/
+#RUN find /opt/ ! -name *.tar* -exec mv --backup=existing --verbose {} {}_$(elf-arch {}) \;
+#RUN find /opt/ -xdev ! -name *.tar* -print0 | xargs --verbose -r0 sh -c 'mv --backup=existing --verbose "$@" "$@"_$(elf-arch "$@")' move
+#RUN find ./ -xdev ! -name *.tar* -print0 | xargs --verbose -r0 sh -c 'mv --backup=existing --verbose "$@" "$@"_$(elf-arch "$@")' move
+#RUN cd /opt && find ./ -xdev ! -name *.tar* -type f -print0 | xargs --verbose -L1 -r0 sh -c 'mv --backup=existing --verbose "$@" "$@"_$(elf-arch "$@")' move
+RUN cd /opt && find ./ -xdev ! -name *.tar* -type f -print0 | xargs -L1 -r0 sh -c 'mv --backup=existing --verbose "$@" "$@"_$(elf-arch "$@")' move
+RUN ls -latr /opt/
+#RUN mv --backup=existing --verbose /opt/ccache opt/ccache_$(elf-arch opt/ccache)
+
 RUN export logfilehack=$( grep -R CPACK_PACKAGE_FILE_NAME /usr/local/src/*/*/CPackConfig.cmake | awk '{print $2}' | tr -d '(")' )
 ENV logfilehack=${logfilehack}
 # Get out of git directory just to be sure.

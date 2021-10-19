@@ -1,3 +1,5 @@
+.ONESHELL:
+#.SHELLFLAGS = -e
 -include *.makeenv
 
 .DEFAULT_GOAL := build
@@ -26,49 +28,80 @@ builx_install:
 
 
 build: Dockerfile
-	docker $(BUILDX) -t $(NS)/$(IMAGE_NAME):$(VERSION) -f Dockerfile .
+	echo = $(shell ( docker $(BUILDX) -t $(NS)/$(IMAGE_NAME):$(VERSION) -f Dockerfile . ))
 
 IMAGE_NAME := ccache-dev
 CONTAINER_NAME := ccache-dev
-buildtest: Dockerfile.test
-	docker $(BUILDX) -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
+VERSION := ccache-4.4.2
 
-define run-dummy4cp =
-@echo "run-dummy4cp target $@"
+buildtest:
+	$(shell ( docker $(BUILDX) -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#@$(run-dummy4cp)@
+#call run-dummy4cp
+
+
+
+BASE_IMAGE=alpine:3.14
+# BASE_IMAGE=alpine:edge
+##CMAKE_BUILD_PARALLEL_LEVEL=3
+CMAKE_BUILD_PARALLEL_LEVEL=1
+#ninjaARG="-l2" # load
+ninjaARG="-j1" # cpus
+buildtest-all: Dockerfile.test
+	echo = $(shell ( docker $(BUILDX) --platform linux/amd64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) CMAKE_BUILD_PARALLEL_LEVEL=$(CMAKE_BUILD_PARALLEL_LEVEL) ninjaARG=$(ninjaARG) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@echo $(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/386 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/arm/v5 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/arm/v6 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/arm/v7 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/arm64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/ppc64le -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/s390x -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+	echo = $(shell ( docker $(BUILDX) --platform linux/riscv64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+#	@$(run-dummy4cp)
+
+.PHONY: run-dummy4cp
+define run-dummy4cp ?=
+###@echo "run-dummy4cp target $@"
 	# https://stackoverflow.com/a/51186557/16596104
 	# https://github.com/moby/buildkit#local-directory
 	# https://docs-stage.docker.com/engine/reference/commandline/create/#extended-description
 	# docker create -ti --name dummy-for-cp berlin4apk/ccache-dev bash
 	# work also, but the 2.ed command is simpler
-	docker create --name dummy4cp $(NS)/$(IMAGE_NAME):$(VERSION)
+#	containernamefoo = $(shell docker container inspect --format='{{.Config.Image}}' dummy4cp 2> /dev/null && docker rm -f dummy4cp )
+	echo = $(shell ( docker container inspect --format='{{.Config.Image}}' dummy4cp 2> /dev/null && docker rm -f dummy4cp ) )
+	echo = $(shell docker create --name dummy4cp $(NS)/$(IMAGE_NAME):$(VERSION) )
 	# docker cp dummy4cp:/usr/local/src/ccache-git/build_package_dir_test/ccache-4.4.2-Linux-x86_64.tar.xz .
 	# docker container export dummy4cp | tar tvf - usr/local/src/ccache-git/ | grep tar
 	# docker container export dummy4cp | tar tf - usr/local/src/ccache-git/ | grep tar
 	docker container export dummy4cp | tar --keep-old-files xvf - opt
 	docker rm -f dummy4cp
 	mkdir outputDIR
-	mv --backup=existing --verbose opt/ccache opt/ccache_$(elf-arch opt/ccache)
-	mv --backup=existing --verbose opt/* ./outputDIR/
+	#mv --backup=existing --verbose opt/ccache opt/ccache_$(elf-arch opt/ccache)
+###	$(shell mv --backup=existing --verbose 'opt/*' ./outputDIR/ )
+	echo = $(shell mv --backup=existing --verbose 'opt/*' ./outputDIR/ )
+##BIN_DIRS := ./opt
+##BINFILES := $(shell find $(BIN_DIRS) -name '*.tar' -or -name '*.tar.*' -or -name '*')
+##	$(shell mv --backup=existing --verbose $(BINFILES) ./outputDIR/ )
 endef
-
-buildtest-all: Dockerfile.test
-	docker $(BUILDX) --platform linux/amd64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/386 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/arm/v6 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/arm/v7 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/arm64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/ppc64le -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/s390x -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
-	docker $(BUILDX) --platform linux/riscv64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test .
-	@$(run-dummy4cp)
 
 
 buildtestenv: Dockerfile.test
