@@ -56,7 +56,8 @@ jobs:
         run: |
           export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
           uname -a
-          docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }}
+          lsb_release -a
+          /usr/bin/docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }}
 
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -c 'echo "cat /etc/redis/redis.conf ||:" '
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'mkdir -p /etc/redis ||: '
