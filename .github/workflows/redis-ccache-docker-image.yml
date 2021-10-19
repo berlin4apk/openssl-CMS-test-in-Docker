@@ -56,8 +56,6 @@ jobs:
 #      - uses: docker-practice/actions-setup-docker@1.0.8
       - name: "Set some redis settings"
         run: |
-          #apt-get install redis-server
-          apt-get install redis-tools
           export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH
           uname -a
           cat /etc/*-release
