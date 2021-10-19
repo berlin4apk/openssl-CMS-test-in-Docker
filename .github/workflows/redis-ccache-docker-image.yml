@@ -3,14 +3,17 @@ name: redis-ccache-docker-container
 on:
   push:
   pull_request:
-  schedule:
-    - cron: 0 7 1 * *
+#  schedule:
+#    - cron: 0 7 1 * *
 
 jobs:
   # Label of the container job
   container-job:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
     # Docker Hub image that `container-job` executes in
     #container: node:10.18-jessie
     #container: _/redis
@@ -95,7 +98,6 @@ jobs:
           # apt-get install redis-server
           sudo apt-get install redis-tools
 
-    container: redis:6.2.4
       - name: 1 Run test to redis without ssl
         run: |
           set -vx
