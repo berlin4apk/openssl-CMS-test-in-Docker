@@ -15,7 +15,8 @@ jobs:
     #container: node:10.18-jessie
     #container: _/redis
     #container: redis:6.2.4-alpine3.13
-    container: redis:6.2.4
+    #container: redis:6.2.4
+    container: ubuntu:latest
     # Service containers to run with `container-job`
     services:
       # Label used to access the service container
