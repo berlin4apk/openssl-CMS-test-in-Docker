@@ -59,8 +59,10 @@ jobs:
           uname -a
           cat /etc/*-release
           /usr/bin/lsb_release -a ||:
-          /usr/bin/docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }}
-
+          /usr/bin/docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }} ||:
+          docker kill --signal=SIGHUP ${{ job.services.redis-y9g98g58d.id }} ||:
+          command -v docker ||:
+          command -v -p -V docker ||:
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -c 'echo "cat /etc/redis/redis.conf ||:" '
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'mkdir -p /etc/redis ||: '
 #          docker exec ${{ job.services.redis-y9g98g58d.id }} /bin/sh -x -c 'echo "save 60 100" >> /etc/redis/redis.conf'
