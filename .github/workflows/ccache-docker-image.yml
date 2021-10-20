@@ -45,6 +45,11 @@ jobs:
             build-args: 'BASE_IMAGE=alpine:edge'
             #release: true
             experimental: true
+          - platform-args: "linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64"
+            os: ubuntu-latest
+            build-args: 'BASE_IMAGE=alpine:edge'
+            release: true
+            experimental: true
     steps:
       - uses: actions/checkout@v2
         with:
