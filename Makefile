@@ -17,8 +17,8 @@ CONTAINER_INSTANCE ?= default
 BUILDX_CREATE_NAME ?= default
 ###BUILDX_CREATE_NAME_prep:	docker buildx create --name $(BUILDX_CREATE_NAME) --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000
 #BUILDX ?= buildx build --progress plain --builder \"$$(docker buildx create --driver-opt env.BUILDKIT_STEP_LOG_MAX_SIZE=10000000 --driver-opt env.BUILDKIT_STEP_LOG_MAX_SPEED=10000000)\"
-#BUILDX ?= buildx build --progress plain --builder $(BUILDX_CREATE_NAME)
-BUILDX ?= buildx build --builder $(BUILDX_CREATE_NAME)
+BUILDX ?= buildx build --progress plain --builder $(BUILDX_CREATE_NAME)
+#BUILDX ?= buildx build --builder $(BUILDX_CREATE_NAME)
 #BUILDX ?= buildx build --no-cache --progress plain
 
 .PHONY: build build-arm push push-arm shell shell-arm run run-arm start start-arm stop stop-arm rm rm-arm release release-arm
@@ -37,6 +37,21 @@ VERSION := ccache-4.4.2
 buildtest:
 	$(shell ( docker $(BUILDX) -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test . ) )
 	$(call dummy4cp_fn, go, tigers)
+
+buildtest1:
+	$(shell ( docker $(BUILDX) --platform linux/amd64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+
+buildtest2:
+	$(shell ( docker $(BUILDX) --platform linux/386 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+
+
+buildtest3:
+	$(shell ( docker $(BUILDX) --platform linux/386,linux/amd64,linux/arm/v5,linux/arm/v7,linux/arm64,linux/ppc64le,linux/s390x,linux/riscv64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar -f Dockerfile.test . ) )
+	$(call dummy4cp_fn, go, tigers)
+
+
 #@$(run-dummy4cp)@
 #call run-dummy4cp
 
@@ -48,7 +63,7 @@ BASE_IMAGE=alpine:3.14
 CMAKE_BUILD_PARALLEL_LEVEL=1
 #ninjaARG="-l2" # load
 ninjaARG="-j1" # cpus
-buildtest-all: Dockerfile.test
+buildtest-all:
 	echo = $(shell ( docker $(BUILDX) --platform linux/amd64 -t $(NS)/$(IMAGE_NAME):$(VERSION) --build-arg fooenvATbuild=foovar BASE_IMAGE=$(IMAGE_NAME) CMAKE_BUILD_PARALLEL_LEVEL=$(CMAKE_BUILD_PARALLEL_LEVEL) ninjaARG=$(ninjaARG) -f Dockerfile.test . ) )
 	$(call dummy4cp_fn, go, tigers)
 #	@echo $(call dummy4cp_fn, go, tigers)

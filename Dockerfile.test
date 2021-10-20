@@ -9,6 +9,9 @@ FROM ${BASE_IMAGE}
 
 ARG VERSION SHA256
 
+ARG ARG_CCACHE_DIR=/tmp/ccache
+ARG ARG_CCACHE_DIRvar="CCACHE_DIR=/tmp/ccache"
+
 ENV control4cp="/control4cp" filelist_before_install4cp="/filelist_before_install4cp" filelist_after_install4cp="/filelist_after_install4cp" env4cp="/env4cp" set4cp="/set4cp" env_after_install4cp="/env_after_install4cp" set_after_install4cp="/set_after_install4cp"
 #RUN \
 #touch /control4cp && chmod 600 /*4cp
@@ -18,6 +21,7 @@ ENV control4cp="/control4cp" filelist_before_install4cp="/filelist_before_instal
 #echo set2cp=/set2cp >> $control4cp
 #chmod 600 /*4cp
 RUN env > ${env4cp} && set > ${set4cp} && chmod 600 /*4cp && time find / -xdev -exec busybox realpath '{}' \; > ${filelist_before_install4cp}
+
 
 #RUN --mount=type=cache,id=apk,target=/var/cache/apk ln -vs /var/cache/apk /etc/apk/cache && \
 RUN \
@@ -30,22 +34,25 @@ RUN \
     perl \
     sudo bash xz zstd cmake asciidoc asciidoctor perl \
     #zlib-dev \
-    #zstd-dev zstd ccache ccache-doc sudo \
+    zstd-dev zstd ccache ccache-doc sudo \
   && rm -rf /var/cache/apk/*
 
 #RUN --mount=type=cache,id=apk,target=/var/cache/apk ln -vs /var/cache/apk /etc/apk/cache && \
-RUN \
-  apk update && \
-  apk upgrade && \
+
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+  apk update
+  apk upgrade
   apk add \
-    py3-pip \
-  && rm -rf /var/cache/apk/* \
+    py3-pip
+  rm -rf /var/cache/apk/*
   # samurai ist eine alte version
   # https://packaging.python.org/tutorials/installing-packages/
   #&& python3 -m pip --no-cache-dir install "ninja==1.10.2.2"
-#  && python3 -m pip install --upgrade -v pip \
-  && python3 -m pip install --upgrade pip \
-  && python3 -m pip install "ninja==1.10.2.2"
+#  && python3 -m pip install --upgrade -v pip
+  python3 -m pip install --upgrade pip
+  python3 -m pip install "ninja==1.10.2.2"
+EOF
 
 ARG progVER=4.4.2
 ARG progNAME=ccache
@@ -83,13 +90,14 @@ ARG ninjaARG="" #  for full cpu on github
 COPY <<EOF /etc/ccache.conf-PROD
 #cache_dir=/ccache/
 #cache_dir=/dev/shm/ccache/
-cache_dir=/tmp/ccache/${cmakeARG}
+#cache_dir=/tmp/ccache/${cmakeARG}
+cache_dir=/tmp/ccache
 compression=false
 #compression_level
 #file_clone=true
 hard_link=false
 umask=002
-secondary_storage="http://172.17.0.1:8080|layout=bazel"
+###secondary_storage="http://172.17.0.1:8080|layout=bazel"
 max_size=500M
 # reshare (CCACHE_RESHARE or CCACHE_NORESHARE, see Boolean values above)
 # If true, ccache will write results to secondary storage even for primary storage cache hits. The default is false.
@@ -99,15 +107,21 @@ EOF
 COPY <<EOF /etc/ccache.conf-TEST
 # /etc/ccache.conf for testing after compiling
 EOF
-RUN ln -s /etc/ccache.conf-TEST /etc/ccache.conf
+#RUN ln -s /etc/ccache.conf-TEST /etc/ccache.conf
+RUN ln -s /etc/ccache.conf-PROD /etc/ccache.conf
 
-RUN set -vx && mkdir -p /usr/local/src/ && cd /usr/local/src/ \
-  && curl -LORJ https://github.com/ccache/ccache/releases/download/v${progVER}/ccache-${progVER}.tar.xz \
-  && curl -LORJ https://github.com/ccache/ccache/releases/download/v${progVER}/ccache-${progVER}.tar.xz.asc \
+
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+#RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache \
+set -vx && mkdir -p /usr/local/src/ && cd /usr/local/src/
+  curl -LORJ https://github.com/ccache/ccache/releases/download/v${progVER}/ccache-${progVER}.tar.xz
+  curl -LORJ https://github.com/ccache/ccache/releases/download/v${progVER}/ccache-${progVER}.tar.xz.asc
   # && FIXME gpgv --verify ccache-${progVER}.tar.xz.asc ccache-${progVER}.tar.xz \
-  && ls -latr \
-  && tar xvJf ccache-${progVER}.tar.xz \
-  && mv ccache-${progVER} ${progDIR} ###||:
+  ls -latr
+  tar xvJf ccache-${progVER}.tar.xz
+  mv ccache-${progVER} ${progDIR}
+   ###||:
   ##RUN cd /usr/local/src/ && cd openssl-git && ls -latr /usr/local/src/ && git apply --check /usr/local/src/*.patch && git apply /usr/local/src/*.patch
   ###curl https://www.openssl.org/source/openssl-${VERSION}.tar.gz -o openssl-${VERSION}.tar.gz && \
   ###sha256sum openssl-${VERSION}.tar.gz | grep ${SHA256} && \
@@ -118,13 +132,22 @@ RUN set -vx && mkdir -p /usr/local/src/ && cd /usr/local/src/ \
   ##RUN cd /usr/local/src/ && cd openssl-git && git checkout c3b5fa4ab7d19e35311a21fec3ebc0a333c352b6
   ##ADD https://patch-diff.githubusercontent.com/raw/openssl/openssl/pull/15348.patch /usr/local/src/openssl-CMS-sign-digest-PR15348.patch
   ##RUN cd /usr/local/src/ && cd openssl-git && ls -latr /usr/local/src/ && git apply --check /usr/local/src/*.patch && git apply /usr/local/src/*.patch
+EOF
+
+
 RUN adduser -D -g '' user
 #ENV CC "ccache gcc"
 #ENV CXX "ccache g++"
 #RUN export CC="ccache gcc"; export CXX="ccache g++"; mkdir -p "$HOME/.ccache"; \
 
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+  ccache -p ||:
+  ccache -s ||:
+EOF
+
 #RUN --mount=type=cache,id=ccache,target=/tmp/ccache CCACHE_DIR=/tmp/ccache ccache -s
-RUN CCACHE_DIR=/tmp/ccache ccache -s ||:
+#RUN CCACHE_DIR=/tmp/ccache ccache -s ||:
 
 # https://wiki.gentoo.org/wiki/GCC_optimization#Optimizing
 # https://wiki.gentoo.org/wiki/Safe_CFLAGS
@@ -180,10 +203,24 @@ ENV CMAKE_GENERATOR=${CMAKE_GENERATOR}
 # LDFLAGS="-static -static-libgcc -static-libstdc++ ${LDFLAGS}" CXXFLAGS="-O2 -static -pipe ${CXXFLAGS}" CFLAGS="-O2 -static -pipe ${CFLAGS}" CMAKE_INSTALL_DO_STRIP=1 CPACK_STRIP_FILES="ccache;./ccache;build_package_dir_test/ccache;bin/ccache" ninja ${ninjaARG} -v package
 
 # export CMAKE_GENERATOR=Ninja oder ARG CMAKE_GENERATOR=Ninja ; ENV CMAKE_GENERATOR=${CMAKE_GENERATOR} # ist wichtig fuer den ninja -v package aufruf
+
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+  ccache -p ||:
+  ccache -s ||:
+EOF
+
 RUN cd /usr/local/src/${progDIR} && mkdir build_package_dir_test && cd build_package_dir_test
-RUN cd /usr/local/src/${progDIR}/build_package_dir_test && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON -DCMAKE_BUILD_TYPE=Release .. 
-RUN cd /usr/local/src/${progDIR}/build_package_dir_test && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && strip --preserve-dates --verbose ccache && ls -lath ccache ccache-*.tar.* && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && cp -p ccache ccache-*.tar.* /opt/ && ls ccache-*.tar.* 
+
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+  cd /usr/local/src/${progDIR}/build_package_dir_test && cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON -DCMAKE_BUILD_TYPE=Release .. 
+EOF
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+  cd /usr/local/src/${progDIR}/build_package_dir_test && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && strip --preserve-dates --verbose ccache && ls -lath ccache ccache-*.tar.* && ninja ${ninjaARG} -v package && ls -lath ccache ccache-*.tar.* && cp -p ccache ccache-*.tar.* /opt/ && ls ccache-*.tar.* 
 ### normal install via cd /usr/local/src/ccache-git/build_package_dir_test && ninja ${ninjaARG} install/strip
+EOF
 
 #FIXME logfile hack
 #RUN logfilehackvar=$(grep -R CPACK_PACKAGE_FILE_NAME */CPackConfig.cmake | cut -d \" -f2) #"
@@ -202,7 +239,9 @@ RUN ls -latr /opt/
 RUN export logfilehack=$( grep -R CPACK_PACKAGE_FILE_NAME /usr/local/src/*/*/CPackConfig.cmake | awk '{print $2}' | tr -d '(")' )
 ENV logfilehack=${logfilehack}
 # Get out of git directory just to be sure.
-RUN cd /usr/local/src/${progDIR}/build_package_dir_test && tmp_dir=$(mktemp -d) && trap "rm -rf $tmp_dir" EXIT && tar -xf ccache-*.tar.xz -C $tmp_dir && CCACHE=$(echo $tmp_dir/ccache-*/bin/ccache) ../test/run | tee -a /opt/${logfilehack}-log.txt
+RUN rm /etc/ccache.conf
+RUN export CCACHE_DIR=/tmp/testccache && cd /usr/local/src/${progDIR}/build_package_dir_test && tmp_dir=$(mktemp -d) && trap "rm -rf $tmp_dir" EXIT && tar -xf ccache-*.tar.xz -C $tmp_dir && CCACHE=$(echo $tmp_dir/ccache-*/bin/ccache) ../test/run | tee -a /opt/${logfilehack}-log.txt
+RUN export CCACHE_DIR= && ln -sf /etc/ccache.conf-PROD /etc/ccache.conf
 #FIXME logfile hack
 
 #RUN cd /usr/local/src/${progDIR} \
@@ -222,7 +261,17 @@ RUN cd /usr/local/src/${progDIR}/build_package_dir_test && tmp_dir=$(mktemp -d) 
 #  && cmake .. ${cmakeARG} -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON  \
 #  && make \
 #  && make install
-RUN ccache -s ||:
+RUN <<EOF
+  ccache -p ||:
+  ccache -s ||:
+EOF
+
+RUN --mount=type=cache,id=ccache,target=${ARG_CCACHE_DIR} <<EOF
+  ${ARG_CCACHE_DIRvar}
+  ccache -p ||:
+  ccache -s ||:
+EOF
+
 
 #RUN CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
 #RUN --mount=type=cache,id=ccache,target=/tmp/ccache/ CCACHE_DIR=/tmp/ccache cd /usr/local/src/openssl-git \
