@@ -10,9 +10,9 @@ jobs:
   container-job:
     # Containers must run in Linux based operating systems
     runs-on: ubuntu-latest
-    continue-on-error: true
-    strategy:
-      fail-fast: false
+    # continue-on-error: true
+    # strategy:
+      # fail-fast: false
     # Docker Hub image that `container-job` executes in
     #container: node:10.18-jessie
     #container: _/redis
@@ -75,13 +75,13 @@ jobs:
 
 
   build:
-    needs: container-job
+  ###  needs: container-job
     runs-on: ${{ matrix.os }}
-    continue-on-error: ${{ matrix.experimental }}
+  ###  continue-on-error: ${{ matrix.experimental }}
     # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
     # https://github.com/apache/commons-io/blob/5911ca64d08c110bc7a612dbef2f278d5dd2a9ab/.github/workflows/maven.yml#L23
-    strategy:
-      fail-fast: false
+  ##  strategy:
+  ##    fail-fast: false
       matrix:
         platform-args:
           - "linux/amd64"
