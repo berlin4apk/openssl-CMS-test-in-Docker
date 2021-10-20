@@ -59,7 +59,7 @@ jobs:
       - name: ccache-${{ github.run_id }}
         uses: hendrikmuhs/ccache-action@v1
         with:
-          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('/tmp/matrixplatformargs') }}
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('/tmp/matrixplatformargs') }}-${{ env.GITHUB_RUN_NUMBER }}
           max-size: 101M
       - uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -78,7 +78,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ env.GITHUB_RUN_NUMBER }}
           restore-keys: |
             ${{ runner.os }}-buildx-
       # START workaround for --cache-from fails if cache does not already exist
@@ -180,7 +180,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ env.GITHUB_RUN_NUMBER }}
           restore-keys: |
             ${{ runner.os }}-buildx-
       # START workaround for --cache-from fails if cache does not already exist
