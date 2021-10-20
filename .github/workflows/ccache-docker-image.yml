@@ -147,15 +147,16 @@ jobs:
         if: matrix.release && matrix.os == 'ubuntu-latest'
         with:
           name: tarball
-          path: lldpd-*.tar.gz
-          if-no-files-found: error
+          path: /opt/*
+          # path: lldpd-*.tar.gz
+          # if-no-files-found: error
       - name: Upload MacOS release package
         uses: actions/upload-artifact@v2
         if: matrix.release && matrix.os == 'macos-latest'
         with:
           name: package
-          path: lldpd-*.pkg
-          if-no-files-found: error
+          path: /opt/*
+         # if-no-files-found: error
   docker:
     needs: build
     runs-on: ubuntu-latest
