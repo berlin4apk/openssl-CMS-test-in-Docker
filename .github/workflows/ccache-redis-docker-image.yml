@@ -80,8 +80,8 @@ jobs:
   ###  continue-on-error: ${{ matrix.experimental }}
     # see https://docs.github.com/en/actions/learn-github-actions/workflow-syntax-for-github-actions#jobsjob_idstrategyfail-fast
     # https://github.com/apache/commons-io/blob/5911ca64d08c110bc7a612dbef2f278d5dd2a9ab/.github/workflows/maven.yml#L23
-  ##  strategy:
-  ##    fail-fast: false
+    strategy:
+     # fail-fast: false
       matrix:
         platform-args:
           - "linux/amd64"
@@ -124,7 +124,7 @@ jobs:
       - name: ccache-${{ github.run_id }}
         uses: hendrikmuhs/ccache-action@v1
         with:
-          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('/tmp/matrixplatformargs') }}
+          key: ${{ runner.os }}-${{ matrix.compiler }}-${{ hashFiles('/tmp/matrixplatformargs') }}-${{ github.run_id }}
           max-size: 101M
       - uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
@@ -143,7 +143,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-buildx-
       # START workaround for --cache-from fails if cache does not already exist
@@ -245,7 +245,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-buildx-
       # START workaround for --cache-from fails if cache does not already exist
