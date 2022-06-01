@@ -4,6 +4,7 @@ on:
   pull_request:
   schedule:
     - cron: 0 7 1 * *
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
