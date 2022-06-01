@@ -209,14 +209,14 @@ jobs:
           LLDPD_CONFIG_ARGS: ${{ matrix.config-args }}
           CC: ${{ matrix.compiler }}
       - name: Upload release tarball
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: matrix.release && matrix.os == 'ubuntu-latest'
         with:
           name: tarball
           path: lldpd-*.tar.gz
           if-no-files-found: error
       - name: Upload MacOS release package
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: matrix.release && matrix.os == 'macos-latest'
         with:
           name: package
