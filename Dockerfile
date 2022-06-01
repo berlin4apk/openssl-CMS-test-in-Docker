@@ -50,7 +50,7 @@ RUN mkdir -p /usr/local/src/ && cd /usr/local/src/ && \
   ###cd /usr/local/src/openssl-${VERSION} && \
   git clone -n https://github.com/openssl/openssl.git openssl-git 
   #&& \
-  RUN cd /usr/local/src/ && cd openssl-git && git checkout c3b5fa4ab7d19e35311a21fec3ebc0a333c352b6
+  RUN cd /usr/local/src/ && cd openssl-git && git checkout e4cdcb8bc44250aa4e0893dc4a7d64668f0fb949
   ADD https://patch-diff.githubusercontent.com/raw/openssl/openssl/pull/15348.patch /usr/local/src/openssl-CMS-sign-digest-PR15348.patch
   RUN cd /usr/local/src/ && cd openssl-git && ls -latr /usr/local/src/ && git apply --check /usr/local/src/*.patch && git apply /usr/local/src/*.patch
 RUN adduser -D -g '' user
